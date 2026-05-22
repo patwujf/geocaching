@@ -1,0 +1,111 @@
+<%- include('partials/header') %>
+
+<div class="container">
+  <a href="/" class="back-link">← <%= t('nav.home') %></a>
+
+  <div class="cache-detail">
+    <% if (cache.cover_image) { %>
+      <img src="/uploads/<%= cache.cover_image %>" class="cache-cover" alt="<%= cache.name %>">
+    <% } %>
+
+    <h1><%= cache.name %></h1>
+
+    <div class="cache-meta">
+      <span><%= t('cache.by') %>: <b><%= cache.author_name %></b></span>
+      <span><%= t('cache.date') %>: <%= cache.created_at %></span>
+      <span><%= t('cache.logs') %>: <%= cache.log_count %></span>
+    </div>
+
+    <% if (cache.description) { %>
+      <div class="cache-desc"><%= cache.description %></div>
+    <% } %>
+
+    <div class="cache-coords">
+      📍 <%= cache.lat.toFixed(5) %>, <%= cache.lng.toFixed(5) %>
+    </div>
+
+    <% if (currentUser && currentUser.id === cache.user_id) { %>
+      <button class="btn-danger" onclick="deleteCache(<%= cache.id %>)"><%= t('cache.delete') %></button>
+    <% } %>
+  </div>
+
+  <!-- 日志区 -->
+  <section class="logs-section">
+    <h2><%= t('cache.logs') %></h2>
+
+    <% if (currentUser) { %>
+      <form class="log-form" onsubmit="submitLog(event, <%= cache.id %>)">
+        <textarea name="content" rows="3" placeholder="<%= t('log.content') %>" required></textarea>
+
+        <div class="log-upload">
+          <label class="upload-btn">
+            📷 <%= t('log.images') %>
+            <input type="file" name="images" multiple accept="image/*" onchange="previewLogImages(this)">
+          </label>
+          <div class="log-preview" id="logPreview"></div>
+        </div>
+
+        <button type="submit" class="btn-primary"><%= t('log.submit') %></button>
+      </form>
+      <div class="error-msg" id="logError"></div>
+    <% } else { %>
+      <p class="login-hint"><a href="/login?redirect=/cache/<%= cache.id %>&lang=<%= lang %>"><%= t('error.loginRequired') %></a></p>
+    <% } %>
+
+    <div class="logs-list" id="logsList">
+      <% if (logs.length === 0) { %>
+        <p class="empty"><%= t('cache.noLogs') %></p>
+      <% } %>
+      <% logs.forEach(log => { %>
+        <div class="log-item">
+          <div class="log-header">
+            <strong><%= log.author_name %></strong>
+            <span class="log-date"><%= log.created_at %></span>
+          </div>
+          <div class="log-content"><%= log.content %></div>
+          <% if (log.images.length > 0) { %>
+            <div class="log-images">
+              <% log.images.forEach(img => { %>
+                <img src="/uploads/<%= img %>" loading="lazy" onclick="window.open(this.src)">
+              <% }) %>
+            </div>
+          <% } %>
+        </div>
+      <% }) %>
+    </div>
+  </section>
+</div>
+
+<script>
+function previewLogImages(input) {
+  const preview = document.getElementById('logPreview');
+  preview.innerHTML = '';
+  for (const file of input.files) {
+    const img = document.createElement('img');
+    img.src = URL.createObjectURL(file);
+    preview.appendChild(img);
+  }
+}
+
+async function submitLog(event, cacheId) {
+  event.preventDefault();
+  const form = event.target;
+  const formData = new FormData(form);
+  const res = await fetch(`/api/cache/${cacheId}/logs`, { method: 'POST', body: formData });
+  const data = await res.json();
+  if (data.ok) {
+    location.reload();
+  } else {
+    document.getElementById('logError').textContent = data.error;
+  }
+}
+
+async function deleteCache(id) {
+  if (!confirm('Delete this cache?')) return;
+  const res = await fetch(`/api/cache/${id}/delete`, { method: 'POST' });
+  const data = await res.json();
+  if (data.ok) window.location.href = '/';
+}
+</script>
+
+<%- include('partials/footer') %>

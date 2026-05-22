@@ -1,0 +1,15 @@
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+function switchLang(lang) {
+  const url = new URL(window.location.href);
+  url.searchParams.set('lang', lang);
+  window.location.href = url.toString();
+}
+
+async function logout() {
+  await fetch('/api/logout', { method: 'POST' });
+  window.location.href = '/?lang=<%= lang %>';
+}
+</script>
+</body>
+</html>

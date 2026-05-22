@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="<%= lang %>">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title><%= t('site.title') %></title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/" class="nav-brand"><%= t('site.title') %></a>
+  <div class="nav-links">
+    <% if (currentUser) { %>
+      <span class="nav-user"><%= currentUser.nickname %></span>
+      <a href="/" class="nav-btn"><%= t('nav.home') %></a>
+      <button class="nav-btn" onclick="logout()"><%= t('nav.logout') %></button>
+    <% } else { %>
+      <a href="/login" class="nav-btn"><%= t('nav.login') %></a>
+    <% } %>
+    <select class="lang-switch" onchange="switchLang(this.value)">
+      <option value="zh" <%= lang === 'zh' ? 'selected' : '' %>>中文</option>
+      <option value="en" <%= lang === 'en' ? 'selected' : '' %>>EN</option>
+    </select>
+  </div>
+</nav>
+
+<main>
+  <%- body %>
+</main>
+
+<script>
+function switchLang(lang) {
+  const url = new URL(window.location.href);
+  url.searchParams.set('lang', lang);
+  window.location.href = url.toString();
+}
+
+async function logout() {
+  await fetch('/api/logout', { method: 'POST' });
+  window.location.href = '/';
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,65 @@
+<%- include('partials/header') %>
+
+<div id="map-container">
+  <div id="map"></div>
+
+  <!-- 搜索栏 -->
+  <div class="search-bar" id="searchBar">
+    <input type="text" id="searchInput" placeholder="<%= t('map.search') %>"
+           value="<%= search %>" onkeydown="if(event.key==='Enter') searchCaches()">
+    <button class="btn-icon" onclick="searchCaches()">🔍</button>
+  </div>
+
+  <!-- 添加藏宝点按钮 -->
+  <button class="btn-add" id="btnAdd" onclick="toggleAddMode()">+</button>
+</div>
+
+<!-- 添加藏宝点表单 -->
+<div class="modal-overlay" id="addModal" style="display:none" onclick="closeAddModal(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h2><%= t('cache.create') %></h2>
+    <p class="hint"><%= t('map.placeMode') %></p>
+    <form id="addForm" onsubmit="submitCache(event)">
+      <input type="hidden" id="cacheLat" name="lat">
+      <input type="hidden" id="cacheLng" name="lng">
+
+      <label><%= t('form.name') %> <span class="req">*</span></label>
+      <input type="text" name="name" placeholder="<%= t('form.namePlaceholder') %>" required>
+
+      <label><%= t('form.description') %></label>
+      <textarea name="description" rows="3" placeholder="<%= t('form.descriptionPlaceholder') %>"></textarea>
+
+      <label><%= t('form.coverImage') %></label>
+      <input type="file" name="cover" accept="image/*">
+
+      <div class="form-pos">
+        <span><%= t('form.lat') %>: <b id="posLat">-</b></span>
+        <span><%= t('form.lng') %>: <b id="posLng">-</b></span>
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="btn-cancel" onclick="closeAddModal()"><%= t('form.cancel') %></button>
+        <button type="submit" class="btn-primary"><%= t('form.submit') %></button>
+      </div>
+    </form>
+    <div class="error-msg" id="addError"></div>
+  </div>
+</div>
+
+<!-- 藏宝点详情弹窗 -->
+<div class="modal-overlay" id="detailModal" style="display:none" onclick="closeDetail(event)">
+  <div class="modal modal-wide" onclick="event.stopPropagation()" id="detailContent">
+    <!-- filled by JS -->
+  </div>
+</div>
+
+<script>
+const LANG = '<%= lang %>';
+const T = {
+  detailLink: '<%= lang === "zh" ? "查看详情 →" : "View details →" %>',
+  logs: '<%= lang === "zh" ? "📝" : "📝" %>',
+};
+</script>
+<script src="/js/map.js"></script>
+
+<%- include('partials/footer') %>

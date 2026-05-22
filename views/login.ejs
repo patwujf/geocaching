@@ -1,0 +1,112 @@
+<%- include('partials/header') %>
+
+<div class="container login-page">
+  <div class="login-card">
+    <h1><%= t('login.title') %></h1>
+
+    <!-- Step 1: Phone -->
+    <div id="step1">
+      <label><%= t('login.phone') %></label>
+      <input type="tel" id="phone" placeholder="<%= t('login.phonePlaceholder') %>" maxlength="20"
+             onkeydown="if(event.key==='Enter') sendCode()">
+      <button class="btn-primary" onclick="sendCode()" id="sendBtn"><%= t('login.sendCode') %></button>
+      <div class="hint">Dev: code is printed in server console. Test code: <b>888888</b></div>
+    </div>
+
+    <!-- Step 2: Code + Nickname -->
+    <div id="step2" style="display:none">
+      <label><%= t('login.code') %></label>
+      <input type="text" id="code" placeholder="<%= t('login.codePlaceholder') %>" maxlength="6"
+             onkeydown="if(event.key==='Enter') verifyCode()">
+
+      <div id="nicknameField" style="display:none">
+        <label><%= t('login.nickname') %></label>
+        <input type="text" id="nickname" placeholder="<%= t('login.nicknamePlaceholder') %>">
+      </div>
+
+      <button class="btn-primary" onclick="verifyCode()"><%= t('login.verify') %></button>
+      <div class="error-msg" id="loginError"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+let currentPhone = '';
+
+async function sendCode() {
+  const phone = document.getElementById('phone').value.trim();
+  if (!phone) { showError('<%= t("error.phoneRequired") %>'); return; }
+
+  document.getElementById('sendBtn').disabled = true;
+  document.getElementById('sendBtn').textContent = '<%= t("login.sent") %>...';
+
+  const res = await fetch('/api/send-code', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ phone }),
+  });
+  const data = await res.json();
+
+  if (data.ok) {
+    currentPhone = phone;
+    document.getElementById('step1').style.display = 'none';
+    document.getElementById('step2').style.display = 'block';
+
+    // Check if new user (need nickname)
+    const checkRes = await fetch('/api/caches?q=' + encodeURIComponent(phone)); // dummy, just need user check
+    // We'll just check on verify - if no nickname error, show nickname field
+  } else {
+    showError(data.error);
+    document.getElementById('sendBtn').disabled = false;
+    document.getElementById('sendBtn').textContent = '<%= t("login.sendCode") %>';
+  }
+}
+
+async function verifyCode() {
+  const code = document.getElementById('code').value.trim();
+  if (!code) { showError('<%= t("error.codeRequired") %>'); return; }
+
+  const nickname = document.getElementById('nickname').value.trim();
+  const body = { phone: currentPhone, code };
+
+  // Try without nickname first
+  const res = await fetch('/api/verify-code', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  const data = await res.json();
+
+  if (data.ok) {
+    const redirect = new URLSearchParams(window.location.search).get('redirect') || '/';
+    window.location.href = redirect + (redirect.includes('?') ? '&' : '?') + 'lang=<%= lang %>';
+  } else if (data.error === 'error.nicknameRequired') {
+    // Show nickname field
+    document.getElementById('nicknameField').style.display = 'block';
+    showError('');
+  } else if (data.error === 'error.codeInvalid') {
+    showError('<%= t("error.codeInvalid") %>');
+  } else {
+    // Try with nickname
+    body.nickname = nickname;
+    const res2 = await fetch('/api/verify-code', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const data2 = await res2.json();
+    if (data2.ok) {
+      const redirect = new URLSearchParams(window.location.search).get('redirect') || '/';
+      window.location.href = redirect + (redirect.includes('?') ? '&' : '?') + 'lang=<%= lang %>';
+    } else {
+      showError(data2.error);
+    }
+  }
+}
+
+function showError(msg) {
+  document.getElementById('loginError').textContent = msg;
+}
+</script>
+
+<%- include('partials/footer') %>

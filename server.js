@@ -1,0 +1,268 @@
+const express = require('express');
+const session = require('express-session');
+const multer  = require('multer');
+const path = require('path');
+const fs = require('fs');
+const crypto = require('crypto');
+const db = require('./db');
+
+// ── App Setup ──
+const app = express();
+const PORT = process.env.PORT || 3001;
+
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views'));
+
+app.use(express.static(path.join(__dirname, 'public')));
+app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// ── Sessions ──
+app.use(session({
+  secret: 'geocaching-dev-secret-change-in-production',
+  resave: false,
+  saveUninitialized: false,
+  cookie: { maxAge: 7 * 24 * 60 * 60 * 1000 },
+}));
+
+// ── File Uploads ──
+const UPLOAD_DIR = path.join(__dirname, 'public', 'uploads');
+if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, UPLOAD_DIR),
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname) || '.jpg';
+    const name = crypto.randomBytes(16).toString('hex') + ext;
+    cb(null, name);
+  },
+});
+const upload = multer({
+  storage,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+  fileFilter: (req, file, cb) => {
+    const allowed = ['.jpg','.jpeg','.png','.gif','.webp','.bmp'];
+    const ext = path.extname(file.originalname).toLowerCase();
+    if (allowed.includes(ext)) return cb(null, true);
+    cb(new Error('Only images allowed'));
+  },
+});
+
+// ── i18n ──
+const zh = require('./locales/zh.json');
+const en = require('./locales/en.json');
+const locales = { zh, en };
+
+function detectLang(req) {
+  if (req.query.lang) return req.query.lang;
+  if (req.session && req.session.lang) return req.session.lang;
+  if (req.headers['accept-language']) {
+    const langs = req.headers['accept-language'].split(',');
+    for (const l of langs) {
+      const code = l.trim().split('-')[0].split(';')[0].toLowerCase();
+      if (code === 'zh' || code === 'en') return code;
+    }
+  }
+  if (req.session && req.session.userId) {
+    const user = db.getUserById(req.session.userId);
+    if (user && user.lang) return user.lang;
+  }
+  return 'zh';
+}
+
+app.use((req, res, next) => {
+  const lang = detectLang(req);
+  req.lang = lang;
+  const tData = locales[lang] || locales.zh;
+  req.t = (key, ...args) => {
+    let val = tData[key] || locales.zh[key] || key;
+    if (args.length) {
+      args.forEach((a, i) => { val = val.replace(`{${i}}`, a); });
+    }
+    return val;
+  };
+  res.locals.t = req.t;
+  res.locals.lang = lang;
+  res.locals.currentUser = req.session.userId
+    ? db.getUserById(req.session.userId) : null;
+  res.locals.path = req.path;
+  next();
+});
+
+// ── Auth Middleware ──
+function requireLogin(req, res, next) {
+  if (!req.session.userId) {
+    return res.redirect(`/login?lang=${req.lang}&redirect=${encodeURIComponent(req.originalUrl)}`);
+  }
+  next();
+}
+
+// ── Routes: Auth ──
+
+app.get('/login', (req, res) => {
+  res.render('login', {
+    error: null,
+    redirect: req.query.redirect || '/',
+  });
+});
+
+app.post('/api/send-code', (req, res) => {
+  const { phone } = req.body;
+  if (!phone) return res.json({ ok: false, error: 'error.phoneRequired' });
+
+  // In development: generate a random code and print to console
+  const code = String(Math.floor(100000 + Math.random() * 900000));
+  db.saveSmsCode(phone, code);
+
+  // Dev mode: log code to console AND accept "888888" as universal test code
+  console.log(`\n📱 SMS Code for ${phone}: ${code}\n`);
+
+  res.json({ ok: true });
+});
+
+app.post('/api/verify-code', (req, res) => {
+  const { phone, code, nickname } = req.body;
+  if (!phone) return res.json({ ok: false, error: 'error.phoneRequired' });
+  if (!code) return res.json({ ok: false, error: 'error.codeRequired' });
+
+  // Accept "888888" as universal test code in dev mode
+  const valid = code === '888888' || db.verifySmsCode(phone, code);
+  if (!valid) return res.json({ ok: false, error: 'error.codeInvalid' });
+
+  let user = db.getUserByPhone(phone);
+  if (!user) {
+    // New user: create account
+    if (!nickname) return res.json({ ok: false, error: 'error.nicknameRequired' });
+    user = db.createUser(phone, nickname, req.lang);
+  } else if (nickname && nickname !== user.nickname) {
+    db.updateUserNickname(user.id, nickname);
+    user = db.getUserById(user.id);
+  }
+
+  req.session.userId = user.id;
+  req.session.lang = req.lang;
+
+  res.json({ ok: true, user: { id: user.id, nickname: user.nickname, phone: user.phone } });
+});
+
+app.post('/api/logout', (req, res) => {
+  req.session.destroy();
+  res.json({ ok: true });
+});
+
+// ── Routes: Caches ──
+
+// Main map page
+app.get('/', (req, res) => {
+  const caches = db.getAllCaches();
+  res.render('index', {
+    caches,
+    search: req.query.q || '',
+    mapboxToken: null, // not needed for OSM tiles
+  });
+});
+
+// Search API (for XHR)
+app.get('/api/caches', (req, res) => {
+  const q = (req.query.q || '').trim();
+  const caches = q ? db.searchCaches(q) : db.getAllCaches();
+  res.json(caches.map(c => ({
+    id: c.id,
+    name: c.name,
+    lat: c.lat,
+    lng: c.lng,
+    author_name: c.author_name,
+    created_at: c.created_at,
+    log_count: c.log_count || 0,
+  })));
+});
+
+// Create cache
+app.post('/api/caches', requireLogin, upload.single('cover'), (req, res) => {
+  const { name, description, lat, lng } = req.body;
+  if (!name || !lat || !lng) {
+    return res.json({ ok: false, error: 'error.nameRequired' });
+  }
+  const cover = req.file ? req.file.filename : '';
+  const cache = db.createCache(req.session.userId, name, description || '', parseFloat(lat), parseFloat(lng), cover);
+  res.json({ ok: true, cache: { id: cache.id, name: cache.name } });
+});
+
+// Upload images (for logs)
+app.post('/api/upload', requireLogin, upload.array('images', 9), (req, res) => {
+  const files = req.files.map(f => f.filename);
+  res.json({ ok: true, files });
+});
+
+// Cache detail page
+app.get('/cache/:id', (req, res) => {
+  const cache = db.getCacheById(parseInt(req.params.id));
+  if (!cache) return res.status(404).render('login', { error: 'error.notFound', redirect: '/' });
+
+  const logs = db.getLogsByCache(cache.id).map(l => ({
+    ...l,
+    images: JSON.parse(l.images || '[]'),
+  }));
+
+  res.render('cache', { cache, logs });
+});
+
+// Delete cache
+app.post('/api/cache/:id/delete', requireLogin, (req, res) => {
+  const cache = db.getCacheById(parseInt(req.params.id));
+  if (!cache) return res.json({ ok: false, error: 'error.notFound' });
+  if (cache.user_id !== req.session.userId) {
+    return res.json({ ok: false, error: 'Permission denied' });
+  }
+  db.deleteCache(cache.id);
+  res.json({ ok: true });
+});
+
+// Add log
+app.post('/api/cache/:id/logs', requireLogin, upload.array('images', 9), (req, res) => {
+  const cacheId = parseInt(req.params.id);
+  const cache = db.getCacheById(cacheId);
+  if (!cache) return res.json({ ok: false, error: 'error.notFound' });
+
+  const { content } = req.body;
+  if (!content) return res.json({ ok: false, error: 'Content is required' });
+
+  const images = (req.files || []).map(f => f.filename);
+  const log = db.createLog(cacheId, req.session.userId, content, images);
+
+  res.json({
+    ok: true,
+    log: { ...log, images: JSON.parse(log.images) },
+  });
+});
+
+// ── Error handling ──
+app.use((req, res) => {
+  res.status(404).send(req.t('error.notFound'));
+});
+
+app.use((err, req, res, next) => {
+  console.error(err);
+  res.status(500).send('Server error');
+});
+
+// ── Start ──
+async function start() {
+  await db.init();
+  app.listen(PORT, '0.0.0.0', () => {
+  console.log('');
+  console.log('  🗺️  GeoCache Server');
+  console.log('');
+  console.log(`  → http://localhost:${PORT}`);
+  console.log('');
+  console.log('  📱 Dev SMS codes are printed to console');
+  console.log('  🔑 Universal test code: 888888');
+  console.log('');
+  });
+}
+
+start().catch(err => {
+  console.error('Failed to start:', err);
+  process.exit(1);
+});
