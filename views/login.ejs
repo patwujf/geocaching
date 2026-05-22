@@ -69,7 +69,9 @@ async function verifyCode() {
   const nickname = document.getElementById('nickname').value.trim();
   const body = { phone: currentPhone, code };
 
-  // Try without nickname first
+  // === BUG FIX: 如果用户已填了昵称，直接带上，不要分两次请求 ===
+  if (nickname) body.nickname = nickname;
+
   const res = await fetch('/api/verify-code', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -81,26 +83,13 @@ async function verifyCode() {
     const redirect = new URLSearchParams(window.location.search).get('redirect') || '/';
     window.location.href = redirect + (redirect.includes('?') ? '&' : '?') + 'lang=<%= lang %>';
   } else if (data.error === 'error.nicknameRequired') {
-    // Show nickname field
+    // 首次登录，显示昵称框让用户填写
     document.getElementById('nicknameField').style.display = 'block';
     showError('');
   } else if (data.error === 'error.codeInvalid') {
     showError('<%= t("error.codeInvalid") %>');
   } else {
-    // Try with nickname
-    body.nickname = nickname;
-    const res2 = await fetch('/api/verify-code', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    });
-    const data2 = await res2.json();
-    if (data2.ok) {
-      const redirect = new URLSearchParams(window.location.search).get('redirect') || '/';
-      window.location.href = redirect + (redirect.includes('?') ? '&' : '?') + 'lang=<%= lang %>';
-    } else {
-      showError(data2.error);
-    }
+    showError(data.error || 'Unknown error');
   }
 }
 
