@@ -1,3 +1,14 @@
+// ── CDN 检查（如果 Leaflet 没加载成功，显示提示） ──
+if (typeof L === 'undefined') {
+  document.getElementById('map').innerHTML =
+    '<div style="text-align:center;padding:60px 20px;color:var(--text-muted);font-size:14px">⚠️ 地图库加载失败，请刷新页面或检查网络</div>';
+
+  // 让 + 按钮至少弹出提示，而不是静默失败
+  window.toggleAddMode = () => alert('地图未加载，无法添加藏宝点');
+  // 不要继续执行
+  throw new Error('Leaflet not loaded');
+}
+
 // ── Map Init ──
 const map = L.map('map', {
   center: [30.0, 115.0], // default center: China
@@ -25,7 +36,6 @@ async function loadCaches(query) {
 }
 
 function renderCaches(caches) {
-  // Clear existing markers
   for (const id in markers) {
     map.removeLayer(markers[id]);
   }
@@ -70,9 +80,7 @@ function toggleAddMode() {
     addMarker.addTo(map);
   }
 
-  // Update form when marker is dragged
   addMarker.on('dragend', updateAddFormPos);
-
   map.on('click', onMapClickForAdd);
 
   document.getElementById('btnAdd').textContent = '✕';
@@ -121,28 +129,6 @@ async function submitCache(event) {
   }
 }
 
-// ── Cache Detail ──
-async function showCacheDetail(id) {
-  const res = await fetch(`/api/caches/details?id=${id}`);
-  const data = await res.json();
-  if (!data) return;
-
-  const d = document.getElementById('detailContent');
-  d.innerHTML = `
-    <h2>${escapeHtml(data.name)}</h2>
-    <p style="opacity:0.7;font-size:13px">${escapeHtml(data.author_name)} · ${data.created_at}</p>
-    ${data.description ? `<p style="margin-top:8px">${escapeHtml(data.description)}</p>` : ''}
-    <a href="/cache/${data.id}" style="display:inline-block;margin-top:12px;font-size:14px">查看详情 →</a>
-  `;
-
-  document.getElementById('detailModal').style.display = 'flex';
-}
-
-function closeDetail(e) {
-  if (e && e.target !== e.currentTarget) return;
-  document.getElementById('detailModal').style.display = 'none';
-}
-
 // ── Helpers ──
 function escapeHtml(str) {
   const div = document.createElement('div');
@@ -153,8 +139,4 @@ function escapeHtml(str) {
 // ── Init ──
 loadCaches();
 
-// Add current location detection (optional, fails silently)
 map.locate({ setView: false, maxZoom: 16 });
-map.on('locationfound', (e) => {
-  // Optionally center map on user's location
-});
