@@ -87,30 +87,176 @@ a:hover { text-decoration: underline; }
   cursor: pointer;
 }
 
-/* ── Map ── */
-#map-container {
-  position: relative;
+/* ── App Layout（地图页） ── */
+.app-layout {
+  display: flex;
+  flex-direction: column;
   height: calc(100vh - 50px);
   width: 100%;
 }
 
-#map {
+/* 顶部工具栏 */
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.toolbar-left {
+  display: flex;
+  gap: 6px;
+}
+
+.toolbar-right {
+  display: flex;
+  align-items: center;
+}
+
+.toolbar-btn {
+  padding: 8px 16px;
+  border: 1px solid var(--border);
+  background: var(--btn-bg);
+  color: var(--text);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.toolbar-btn:hover {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+/* 主内容区：地图 + 侧栏 */
+.main-content {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.map-panel {
+  flex: 1;
+  min-width: 0;
+}
+
+/* 侧栏列表 */
+.sidebar {
+  width: 320px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid var(--border);
+  background: var(--bg);
+}
+
+.sidebar-header {
+  padding: 12px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sidebar-count {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: normal;
+  background: var(--btn-bg);
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+.sidebar-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+}
+
+.sidebar-empty {
+  text-align: center;
+  padding: 32px 16px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.sidebar-list .list-item {
+  padding: 10px 12px;
+  margin-bottom: 6px;
+  border-radius: 8px;
+}
+
+.sidebar-list .list-item-name {
+  font-size: 14px;
+}
+
+.sidebar-list .list-item-meta {
+  gap: 8px;
+}
+
+
+/* ── Form Row (manual add) ── */
+.form-row {
+  display: flex;
+  gap: 12px;
+}
+
+.form-col {
+  flex: 1;
+}
+
+.form-col label {
+  display: block;
+  font-size: 13px;
+  margin-top: 12px;
+  margin-bottom: 4px;
+}
+
+.form-col input[type="number"] {
   width: 100%;
-  height: 100%;
+  padding: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  -moz-appearance: textfield;
+}
+
+.form-col input[type="number"]::-webkit-inner-spin-button,
+.form-col input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
 
 /* Search */
 .search-bar {
-  position: absolute;
-  top: 12px;
-  left: 12px;
-  z-index: 1000;
   display: flex;
-  gap: 6px;
-  background: var(--card);
-  padding: 6px;
-  border-radius: var(--radius);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  gap: 4px;
+  background: var(--btn-bg);
+  padding: 4px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
+.search-bar input {
+  border: none;
+  background: transparent;
+  color: var(--text);
+  padding: 4px 8px;
+  font-size: 14px;
+  width: 180px;
+  outline: none;
 }
 
 .search-bar input {
@@ -189,6 +335,7 @@ a:hover { text-decoration: underline; }
 
 .modal input[type="text"],
 .modal input[type="tel"],
+.modal input[type="number"],
 .modal textarea {
   width: 100%;
   padding: 10px;
@@ -457,6 +604,79 @@ a:hover { text-decoration: underline; }
   font-size: 12px;
   color: var(--text-muted);
   margin-top: 8px;
+}
+
+/* ── Cache List Item ── */
+.list-empty {
+  text-align: center;
+  padding: 48px 20px;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.list-empty {
+  text-align: center;
+  padding: 48px 20px;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.list-item {
+  display: block;
+  padding: 14px 16px;
+  background: var(--card);
+  border-radius: 10px;
+  margin-bottom: 8px;
+  text-decoration: none !important;
+  color: var(--text) !important;
+  transition: transform 0.15s;
+}
+
+.list-item:hover {
+  transform: translateX(4px);
+}
+
+.list-item:active {
+  transform: scale(0.98);
+}
+
+.list-item-name {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.list-item-meta {
+  display: flex;
+  gap: 12px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* ── Map Error / Fallback ── */
+.map-fallback-msg {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-muted);
+}
+
+.map-fallback-msg p {
+  font-size: 18px;
+  margin-bottom: 8px;
+}
+
+.map-fallback-msg .sub {
+  font-size: 14px;
+  opacity: 0.7;
+}
+
+.map-error {
+  background: var(--bg);
 }
 
 /* ── Leaflet overrides ── */

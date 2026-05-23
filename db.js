@@ -241,4 +241,5 @@ module.exports = {
   createLog,
   getLogById,
   getLogsByCache,
+  flush,
 };

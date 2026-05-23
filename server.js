@@ -179,14 +179,23 @@ app.get('/api/caches', (req, res) => {
 });
 
 // Create cache
-app.post('/api/caches', requireLogin, upload.single('cover'), (req, res) => {
-  const { name, description, lat, lng } = req.body;
-  if (!name || !lat || !lng) {
-    return res.json({ ok: false, error: 'error.nameRequired' });
+app.post('/api/caches', requireLogin, (req, res) => {
+  try {
+    const { name, description, lat, lng } = req.body;
+    if (!name || !lat || !lng) {
+      return res.json({ ok: false, error: '名称和坐标为必填项' });
+    }
+    const latNum = parseFloat(lat);
+    const lngNum = parseFloat(lng);
+    if (isNaN(latNum) || isNaN(lngNum)) {
+      return res.json({ ok: false, error: '坐标格式错误' });
+    }
+    const cache = db.createCache(req.session.userId, name, description || '', latNum, lngNum, '');
+    res.json({ ok: true, cache: { id: cache.id, name: cache.name } });
+  } catch (e) {
+    console.error('[创建藏宝点错误]', e);
+    res.json({ ok: false, error: '创建失败: ' + e.message });
   }
-  const cover = req.file ? req.file.filename : '';
-  const cache = db.createCache(req.session.userId, name, description || '', parseFloat(lat), parseFloat(lng), cover);
-  res.json({ ok: true, cache: { id: cache.id, name: cache.name } });
 });
 
 // Upload images (for logs)
@@ -250,6 +259,13 @@ app.use((err, req, res, next) => {
 // ── Start ──
 async function start() {
   await db.init();
+
+  // 数据持久化保障：进程退出时保存
+  function safeFlush() { try { db.flush(); } catch {} }
+  process.on('SIGINT', () => { safeFlush(); process.exit(0); });
+  process.on('SIGTERM', () => { safeFlush(); process.exit(0); });
+  process.on('exit', safeFlush);
+
   app.listen(PORT, '0.0.0.0', () => {
   console.log('');
   console.log('  🗺️  GeoCache Server');

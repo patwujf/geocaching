@@ -1,41 +1,60 @@
 <%- include('partials/header') %>
 
-<div id="map-container">
-  <div id="map"></div>
-
-  <!-- 搜索栏 -->
-  <div class="search-bar" id="searchBar">
-    <input type="text" id="searchInput" placeholder="<%= t('map.search') %>"
-           value="<%= search %>" onkeydown="if(event.key==='Enter') searchCaches()">
-    <button class="btn-icon" onclick="searchCaches()">🔍</button>
+<div class="app-layout">
+  <!-- 顶部工具栏 -->
+  <div class="toolbar">
+    <div class="toolbar-left">
+      <button class="toolbar-btn" id="btnAdd" onclick="toggleAddMode()">📍 <%= t('cache.create') %></button>
+    </div>
+    <div class="toolbar-right">
+      <div class="search-bar">
+        <input type="text" id="searchInput" placeholder="<%= t('map.search') %>"
+               value="<%= search %>" onkeydown="if(event.key==='Enter') searchCaches()">
+        <button class="btn-icon" onclick="searchCaches()">🔍</button>
+      </div>
+    </div>
   </div>
 
-  <!-- 添加藏宝点按钮 -->
-  <button class="btn-add" id="btnAdd" onclick="toggleAddMode()">+</button>
+  <!-- 主内容区：地图 + 侧栏列表 -->
+  <div class="main-content">
+    <div id="map" class="map-panel"></div>
+
+    <div class="sidebar">
+      <div class="sidebar-header">
+        <span>📋 <%= t('cache.listView') %></span>
+        <span class="sidebar-count" id="sidebarCount">0</span>
+      </div>
+      <div class="sidebar-list" id="sidebarList">
+        <div class="sidebar-empty">移动地图查看范围内的藏宝点</div>
+      </div>
+    </div>
+  </div>
 </div>
 
-<!-- 添加藏宝点表单 -->
+<!-- 地图点击添加藏宝点弹窗 -->
 <div class="modal-overlay" id="addModal" style="display:none" onclick="closeAddModal(event)">
   <div class="modal" onclick="event.stopPropagation()">
     <h2><%= t('cache.create') %></h2>
     <p class="hint"><%= t('map.placeMode') %></p>
     <form id="addForm" onsubmit="submitCache(event)">
-      <input type="hidden" id="cacheLat" name="lat">
-      <input type="hidden" id="cacheLng" name="lng">
-
       <label><%= t('form.name') %> <span class="req">*</span></label>
       <input type="text" name="name" placeholder="<%= t('form.namePlaceholder') %>" required>
+
+      <div class="form-row">
+        <div class="form-col">
+          <label><%= t('form.lat') %> <span class="req">*</span></label>
+          <input type="number" id="cacheLat" name="lat" step="0.000001" placeholder="例如 39.9042" required>
+        </div>
+        <div class="form-col">
+          <label><%= t('form.lng') %> <span class="req">*</span></label>
+          <input type="number" id="cacheLng" name="lng" step="0.000001" placeholder="例如 116.4074" required>
+        </div>
+      </div>
 
       <label><%= t('form.description') %></label>
       <textarea name="description" rows="3" placeholder="<%= t('form.descriptionPlaceholder') %>"></textarea>
 
-      <label><%= t('form.coverImage') %></label>
-      <input type="file" name="cover" accept="image/*">
-
-      <div class="form-pos">
-        <span><%= t('form.lat') %>: <b id="posLat">-</b></span>
-        <span><%= t('form.lng') %>: <b id="posLng">-</b></span>
-      </div>
+      <p class="hint" style="margin-top:8px">点击地图自动填入坐标，或直接输入</p>
 
       <div class="form-actions">
         <button type="button" class="btn-cancel" onclick="closeAddModal()"><%= t('form.cancel') %></button>
@@ -45,6 +64,8 @@
     <div class="error-msg" id="addError"></div>
   </div>
 </div>
+
+
 
 <!-- 藏宝点详情弹窗 -->
 <div class="modal-overlay" id="detailModal" style="display:none" onclick="closeDetail(event)">
@@ -57,9 +78,9 @@
 const LANG = '<%= lang %>';
 const T = {
   detailLink: '<%= lang === "zh" ? "查看详情 →" : "View details →" %>',
-  logs: '<%= lang === "zh" ? "📝" : "📝" %>',
 };
 </script>
-<script src="/js/map.js"></script>
-
 <%- include('partials/footer') %>
+<script src="/js/map.js"></script>
+</body>
+</html>
