@@ -11,6 +11,9 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 app.set('view engine', 'ejs');
+const DATA_DIR = process.env.DATA_DIR || __dirname;
+const UPLOAD_DIR = path.join(DATA_DIR, 'public', 'uploads');
+
 app.set('views', path.join(__dirname, 'views'));
 
 app.use(express.static(path.join(__dirname, 'public')));
@@ -27,8 +30,6 @@ app.use(session({
 }));
 
 // ── File Uploads ──
-const DATA_DIR = process.env.DATA_DIR || __dirname;
-const UPLOAD_DIR = path.join(DATA_DIR, 'public', 'uploads');
 if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 
 const storage = multer.diskStorage({
