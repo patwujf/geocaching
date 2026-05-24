@@ -3,7 +3,9 @@ const fs = require('fs');
 const path = require('path');
 
 const DATA_DIR = process.env.DATA_DIR || __dirname;
-const DB_PATH = path.join(DATA_DIR, 'data', 'geocaching.db');
+const DB_PATH = DATA_DIR === __dirname
+  ? path.join(__dirname, 'data', 'geocaching.db')
+  : path.join(DATA_DIR, 'geocaching.db');
 
 let SQL;
 let db;       // In-memory sql.js database
