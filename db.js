@@ -2,7 +2,8 @@ const initSqlJs = require('sql.js');
 const fs = require('fs');
 const path = require('path');
 
-const DB_PATH = path.join(__dirname, 'data', 'geocaching.db');
+const DATA_DIR = process.env.DATA_DIR || __dirname;
+const DB_PATH = path.join(DATA_DIR, 'data', 'geocaching.db');
 
 let SQL;
 let db;       // In-memory sql.js database
@@ -74,9 +75,16 @@ function initTables() {
       phone       TEXT    UNIQUE NOT NULL,
       nickname    TEXT    NOT NULL DEFAULT '',
       lang        TEXT    DEFAULT 'zh',
-      created_at  TEXT    DEFAULT (datetime('now'))
+      created_at  TEXT    DEFAULT (datetime('now')),
+      map_lat     REAL    DEFAULT 0,
+      map_lng     REAL    DEFAULT 0,
+      map_zoom    INTEGER DEFAULT 5
     )
   `);
+  // 兼容旧数据库：添加可能缺失的列
+  try { db.run("ALTER TABLE users ADD COLUMN map_lat REAL DEFAULT 0"); } catch {}
+  try { db.run("ALTER TABLE users ADD COLUMN map_lng REAL DEFAULT 0"); } catch {}
+  try { db.run("ALTER TABLE users ADD COLUMN map_zoom INTEGER DEFAULT 5"); } catch {}
   db.run(`
     CREATE TABLE IF NOT EXISTS sms_codes (
       id          INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -140,6 +148,10 @@ function createUser(phone, nickname, lang) {
 
 function updateUserNickname(id, nickname) {
   qRun("UPDATE users SET nickname = ? WHERE id = ?", [nickname, id]);
+}
+
+function updateUserMapPrefs(id, lat, lng, zoom) {
+  qRun("UPDATE users SET map_lat = ?, map_lng = ?, map_zoom = ? WHERE id = ?", [lat, lng, zoom, id]);
 }
 
 // ── SMS Codes ──
@@ -231,6 +243,7 @@ module.exports = {
   getUserById,
   createUser,
   updateUserNickname,
+  updateUserMapPrefs,
   saveSmsCode,
   verifySmsCode,
   createCache,

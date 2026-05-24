@@ -10,7 +10,8 @@
       <input type="tel" id="phone" placeholder="<%= t('login.phonePlaceholder') %>" maxlength="20"
              onkeydown="if(event.key==='Enter') sendCode()">
       <button class="btn-primary" onclick="sendCode()" id="sendBtn"><%= t('login.sendCode') %></button>
-      <div class="hint">Dev: code is printed in server console. Test code: <b>888888</b></div>
+      <div class="hint"><%= t('login.smsHint') %></div>
+      <div class="error-msg" id="sendError"></div>
     </div>
 
     <!-- Step 2: Code + Nickname -->
@@ -56,7 +57,7 @@ async function sendCode() {
     const checkRes = await fetch('/api/caches?q=' + encodeURIComponent(phone)); // dummy, just need user check
     // We'll just check on verify - if no nickname error, show nickname field
   } else {
-    showError(data.error);
+    document.getElementById('sendError').textContent = data.error || '发送失败';
     document.getElementById('sendBtn').disabled = false;
     document.getElementById('sendBtn').textContent = '<%= t("login.sendCode") %>';
   }

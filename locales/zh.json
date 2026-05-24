@@ -49,6 +49,7 @@
   "login.nicknamePlaceholder": "给自己起个名字（首次登录）",
   "login.sent": "验证码已发送",
   "login.resend": "重新发送",
+  "login.smsHint": "验证码将通过短信发送到您的手机",
   "error.phoneRequired": "请输入手机号",
   "error.codeRequired": "请输入验证码",
   "error.codeInvalid": "验证码错误或已过期",

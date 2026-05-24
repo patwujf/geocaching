@@ -49,6 +49,7 @@
   "login.nicknamePlaceholder": "Choose a nickname (first time)",
   "login.sent": "Code sent",
   "login.resend": "Resend",
+  "login.smsHint": "A verification code will be sent via SMS to your phone",
   "error.phoneRequired": "Phone number is required",
   "error.codeRequired": "Verification code is required",
   "error.codeInvalid": "Invalid or expired code",
