@@ -139,8 +139,15 @@ app.post('/api/verify-code', async (req, res) => {
   if (!phone) return res.json({ ok: false, error: 'error.phoneRequired' });
   if (!code) return res.json({ ok: false, error: 'error.codeRequired' });
 
+  // 先查本地用户，判断是否需要昵称
+  // 需要昵称但没提供 → 先返回让用户填，不消耗验证码
+  let user = db.getUserByPhone(phone);
+  if (!user && !nickname) {
+    return res.json({ ok: false, error: 'error.nicknameRequired' });
+  }
+
   try {
-    // 通过 auth-server 验证短信验证码
+    // 通过 auth-server 验证短信验证码（只调一次，一次性消耗）
     const authRes = await fetch(`${AUTH_SERVER}/api/verify-login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -152,10 +159,7 @@ app.post('/api/verify-code', async (req, res) => {
     }
 
     // 验证码正确，管理 GeoCaching 本地用户
-    let user = db.getUserByPhone(phone);
     if (!user) {
-      // 新用户：需要昵称
-      if (!nickname) return res.json({ ok: false, error: 'error.nicknameRequired' });
       user = db.createUser(phone, nickname, req.lang);
     } else if (nickname && nickname !== user.nickname) {
       db.updateUserNickname(user.id, nickname);
