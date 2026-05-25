@@ -712,3 +712,23 @@ a:hover { text-decoration: underline; }
   color: var(--text) !important;
   border-color: var(--border) !important;
 }
+
+/* ── Mobile: 地图全屏，隐藏侧栏 ── */
+@media (max-width: 768px) {
+  .sidebar {
+    display: none;
+  }
+  .main-content {
+    flex-direction: column;
+  }
+  .map-panel {
+    width: 100%;
+  }
+  .search-bar input {
+    width: 120px;
+  }
+  .toolbar-btn {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+}
