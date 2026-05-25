@@ -99,12 +99,11 @@ function initMap(savedPrefs) {
     mapReady = true;
     document.getElementById('map').classList.remove('map-error');
 
-    // 地图中心十字标记 + 坐标显示
+    // 地图中心十字标记
     addMapOverlays();
 
     // 地图移动/缩放后更新侧栏列表
     map.on('moveend', updateSidebarList);
-    map.on('moveend', updateCenterCoords);
     map.on('moveend', debouncedSavePrefs);
 
     loadCaches();
@@ -126,7 +125,7 @@ function showMapError(html) {
   }
 }
 
-// ── 地图中心十字标记 + 坐标显示 ──
+// ── 地图中心十字标记 ──
 function addMapOverlays() {
   const mapEl = document.getElementById('map');
 
@@ -135,21 +134,6 @@ function addMapOverlays() {
   crosshair.className = 'map-crosshair';
   crosshair.innerHTML = '<div class="map-crosshair-dot"></div>';
   mapEl.appendChild(crosshair);
-
-  // 坐标显示
-  const coordsEl = document.createElement('div');
-  coordsEl.className = 'map-coords';
-  coordsEl.id = 'mapCoords';
-  mapEl.appendChild(coordsEl);
-
-  updateCenterCoords();
-}
-
-function updateCenterCoords() {
-  const el = document.getElementById('mapCoords');
-  if (!el || !mapReady || !map) return;
-  const center = map.getCenter();
-  el.textContent = center.lat.toFixed(6) + ', ' + center.lng.toFixed(6);
 }
 
 // ── 用户定位回调 ──
@@ -253,7 +237,6 @@ function updateSidebarList() {
       <div class="list-item-meta">
         <span>👤 ${escapeHtml(c.author_name)}</span>
         <span>📝 ${c.log_count || 0}</span>
-        <span>📍 ${c.lat.toFixed(4)}, ${c.lng.toFixed(4)}</span>
       </div>
     </a>
   `).join('');
@@ -282,8 +265,6 @@ function toggleAddMode() {
     addMarker.setLatLng([center.lat, center.lng]);
     addMarker.addTo(map);
   }
-  updateAddFormPos();
-  addMarker.on('dragend', updateAddFormPos);
   map.on('click', onMapClickForAdd);
   document.getElementById('btnAdd').textContent = '✕ 取消';
   document.getElementById('addModal').style.display = 'flex';
@@ -301,13 +282,6 @@ function cancelAddMode() {
 
 function onMapClickForAdd(e) {
   addMarker.setLatLng(e.latlng);
-  updateAddFormPos();
-}
-
-function updateAddFormPos() {
-  const pos = addMarker.getLatLng();
-  document.getElementById('cacheLat').value = pos.lat.toFixed(6);
-  document.getElementById('cacheLng').value = pos.lng.toFixed(6);
 }
 
 function closeAddModal(e) {
@@ -319,9 +293,10 @@ async function submitCache(event) {
   event.preventDefault();
   const form = document.getElementById('addForm');
   const fd = new FormData(form);
-  const lat = fd.get('lat');
-  const lng = fd.get('lng');
   const name = fd.get('name');
+  const pos = addMarker.getLatLng();
+  const lat = pos.lat;
+  const lng = pos.lng;
   console.log('[提交]', { name, lat, lng });
   try {
     const res = await fetch('/api/caches', {

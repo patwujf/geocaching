@@ -40,21 +40,8 @@
       <label><%= t('form.name') %> <span class="req">*</span></label>
       <input type="text" name="name" placeholder="<%= t('form.namePlaceholder') %>" required>
 
-      <div class="form-row">
-        <div class="form-col">
-          <label><%= t('form.lat') %> <span class="req">*</span></label>
-          <input type="number" id="cacheLat" name="lat" step="0.000001" placeholder="例如 39.9042" required>
-        </div>
-        <div class="form-col">
-          <label><%= t('form.lng') %> <span class="req">*</span></label>
-          <input type="number" id="cacheLng" name="lng" step="0.000001" placeholder="例如 116.4074" required>
-        </div>
-      </div>
-
       <label><%= t('form.description') %></label>
       <textarea name="description" rows="3" placeholder="<%= t('form.descriptionPlaceholder') %>"></textarea>
-
-      <p class="hint" style="margin-top:8px">点击地图自动填入坐标，或直接输入</p>
 
       <div class="form-actions">
         <button type="button" class="btn-cancel" onclick="closeAddModal()"><%= t('form.cancel') %></button>

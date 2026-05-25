@@ -205,40 +205,6 @@ a:hover { text-decoration: underline; }
 
 
 /* ── Form Row (manual add) ── */
-.form-row {
-  display: flex;
-  gap: 12px;
-}
-
-.form-col {
-  flex: 1;
-}
-
-.form-col label {
-  display: block;
-  font-size: 13px;
-  margin-top: 12px;
-  margin-bottom: 4px;
-}
-
-.form-col input[type="number"] {
-  width: 100%;
-  padding: 10px;
-  border: 1px solid var(--border);
-  background: var(--bg);
-  color: var(--text);
-  border-radius: 8px;
-  font-size: 14px;
-  font-family: inherit;
-  -moz-appearance: textfield;
-}
-
-.form-col input[type="number"]::-webkit-inner-spin-button,
-.form-col input[type="number"]::-webkit-outer-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
-}
-
 /* Search */
 .search-bar {
   display: flex;
@@ -440,12 +406,6 @@ a:hover { text-decoration: underline; }
   margin-top: 12px;
   line-height: 1.6;
   white-space: pre-wrap;
-}
-
-.cache-coords {
-  margin-top: 8px;
-  font-size: 13px;
-  color: var(--text-muted);
 }
 
 /* ── Logs ── */
@@ -691,25 +651,6 @@ a:hover { text-decoration: underline; }
   border-radius: 50%;
   background: #fff;
   filter: drop-shadow(0 0 1.5px #000) drop-shadow(0 0 1px #000);
-}
-
-/* ── 地图中心坐标显示 ── */
-.map-coords {
-  position: absolute;
-  top: 12px;
-  left: 12px;
-  z-index: 1000;
-  background: rgba(0, 0, 0, 0.55);
-  color: #fff;
-  padding: 6px 12px;
-  border-radius: 8px;
-  font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
-  font-size: 13px;
-  line-height: 1.5;
-  pointer-events: none;
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-  border: 1px solid rgba(255,255,255,0.1);
 }
 
 /* ── Map Error / Fallback ── */

@@ -20,10 +20,6 @@
       <div class="cache-desc"><%= cache.description %></div>
     <% } %>
 
-    <div class="cache-coords">
-      📍 <%= cache.lat.toFixed(5) %>, <%= cache.lng.toFixed(5) %>
-    </div>
-
     <% if (currentUser && currentUser.id === cache.user_id) { %>
       <button class="btn-danger" onclick="deleteCache(<%= cache.id %>)"><%= t('cache.delete') %></button>
     <% } %>
